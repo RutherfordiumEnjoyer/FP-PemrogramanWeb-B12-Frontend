@@ -59,7 +59,7 @@ export default function ProfilePage() {
           </a>
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" asChild>
-              <a href="/explore" className="flex items-center gap-2">
+              <a href="/" className="flex items-center gap-2">
                 <img src={iconExplore} alt="" className="w-5 h-5" />
                 <span>Explore</span>
               </a>

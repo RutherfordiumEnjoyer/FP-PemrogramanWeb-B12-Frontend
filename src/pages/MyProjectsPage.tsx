@@ -23,11 +23,12 @@ import iconUnpublish from "../assets/images/icon-eye-off.svg";
 import iconDelete from "../assets/images/icon-trash.svg";
 
 type Project = {
-  id: number;
-  title: string;
-  thumbnail: string | null;
-  created_at: string;
-  status: "published" | "archived";
+  id: string;
+  name: string;
+  description: string;
+  thumbnail_image: string | null;
+  is_published: boolean;
+  game_template: number;
 };
 
 export default function MyProjectsPage() {
@@ -42,7 +43,7 @@ export default function MyProjectsPage() {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/api/game");
+        const response = await api.get("/api/auth/me/game");
         setProjects(response.data.data);
       } catch (err) {
         setError("Failed to fetch projects. Please try again later.");
@@ -62,7 +63,7 @@ export default function MyProjectsPage() {
         </a>
         <div className="hidden md:flex items-center gap-2">
           <Button variant="ghost" asChild>
-            <a href="/explore" className="flex items-center gap-2">
+            <a href="/" className="flex items-center gap-2">
               <img src={iconExplore} alt="" className="w-5 h-5" />
               <span>Explore</span>
             </a>
@@ -133,29 +134,60 @@ export default function MyProjectsPage() {
   );
 
   const ProjectList = () => (
-    <div className="mt-6 space-y-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-1 mt-6">
       {projects.map((project) => (
-        <Card key={project.id} className="p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <Card
+          key={project.id}
+          className="relative p-4 h-fit sm:h-80 md:h-fit cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => navigate(`/quiz/${project.id}`)}
+        >
+          <div className="w-full h-full flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="w-full h-full flex flex-col md:flex-row md:items-center gap-4">
               <img
-                src={project.thumbnail || thumbnailPlaceholder}
-                alt={project.title}
-                className="w-24 h-16 rounded-md object-cover"
+                src={
+                  project.thumbnail_image
+                    ? `${import.meta.env.VITE_API_URL}/${project.thumbnail_image}`
+                    : thumbnailPlaceholder
+                }
+                alt={
+                  project.thumbnail_image
+                    ? project.name
+                    : "Placeholder Thumbnail"
+                }
+                className="w-full md:w-28 md:h-24 rounded-md object-cover"
               />
-              <div>
-                <Typography variant="p" className="font-semibold">
-                  {project.title}
-                </Typography>
-                <Typography variant="small" className="text-muted-foreground">
-                  Created: {new Date(project.created_at).toLocaleDateString()}
-                </Typography>
-                <div className="flex items-center gap-2 mt-2">
+              <div className="flex flex-col md:gap-6 justify-between items-stretch h-full w-full">
+                <div className="flex justify-between">
+                  <div className="space-y-1">
+                    <Typography variant="p" className="font-semibold">
+                      {project.name}
+                    </Typography>
+                    <Typography
+                      variant="p"
+                      className="text-sm text-muted-foreground"
+                    >
+                      {project.description}
+                    </Typography>
+                  </div>
+                  <div className="md:hidden">
+                    <Badge
+                      variant={project.is_published ? "default" : "destructive"}
+                      className={
+                        project.is_published
+                          ? "capitalize bg-green-100 text-green-800"
+                          : "capitalize bg-yellow-100 text-yellow-800"
+                      }
+                    >
+                      {project.is_published ? "Published" : "Draft"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-6 md:mt-2">
                   <Button variant="outline" size="sm" className="h-7">
                     <img src={iconEdit} alt="" className="w-3.5 h-3.5 mr-1.5" />
                     Edit
                   </Button>
-                  {project.status === "published" ? (
+                  {project.is_published ? (
                     <Button variant="outline" size="sm" className="h-7">
                       <img
                         src={iconUnpublish}
@@ -189,16 +221,20 @@ export default function MyProjectsPage() {
                 </div>
               </div>
             </div>
-            <Badge
-              variant={project.status === "published" ? "default" : "secondary"}
-              className={
-                project.status === "published"
-                  ? "capitalize bg-green-100 text-green-800"
-                  : "capitalize bg-yellow-100 text-yellow-800"
-              }
-            >
-              {project.status}
-            </Badge>
+
+            {/* Right side: Badge */}
+            <div className="hidden md:block">
+              <Badge
+                variant={project.is_published ? "default" : "destructive"}
+                className={
+                  project.is_published
+                    ? "text-sm px-3 bg-green-100 text-green-800"
+                    : "text-sm px-3 bg-yellow-100 text-yellow-800"
+                }
+              >
+                {project.is_published ? "Published" : "Draft"}
+              </Badge>
+            </div>
           </div>
         </Card>
       ))}
