@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import StartScreen from "./components/StartScreen";
 import Maps from "./components/Maps";
 import PauseDialog from "./components/PauseDialog";
@@ -12,15 +12,20 @@ type MoveDir = "up" | "down" | "left" | "right" | null;
 
 const Game = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data: gameData } = useGetMazeChaseGame(id || "");
 
-  const [stage, setStage] = useState<"start" | "zoom" | "maze">("start");
+  const [stage, setStage] = useState<"start" | "zoom" | "maze" | "gameover">(
+    "start",
+  );
   const [hideButton, setHideButton] = useState(false);
   const [moveDir, setMoveDir] = useState<MoveDir>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [showPauseDialog, setShowPauseDialog] = useState(false);
   const [currentQuestionIndex] = useState(0);
+  const [health, setHealth] = useState(3);
+  const [isInvincible, setIsInvincible] = useState(false);
 
   // Initialize countdown from API
   useEffect(() => {
@@ -88,12 +93,39 @@ const Game = () => {
     setHideButton(false);
     setMoveDir(null);
     setCountdown(gameData?.countdown || null);
+    setHealth(3);
+    setIsInvincible(false);
   };
 
   const handleAnswerSelected = (answerIndex: number) => {
     console.log("Answer selected:", answerIndex);
     // TODO: Implement answer validation logic here
     // You can check if it's correct answer and proceed to next question
+  };
+
+  const handlePlayerDeath = useCallback(() => {
+    if (isInvincible) return;
+
+    setIsInvincible(true);
+    setHealth((prev) => {
+      const newHealth = prev - 1;
+      if (newHealth <= 0) {
+        // Game Over - delay to show death animation then go to game over screen
+        setTimeout(() => {
+          setStage("gameover");
+        }, 1000);
+      }
+      return newHealth;
+    });
+
+    // Invincibility frames - player is invincible for 2 seconds after being hit
+    setTimeout(() => {
+      setIsInvincible(false);
+    }, 2000);
+  }, [isInvincible]);
+
+  const handleBackToMenu = () => {
+    navigate("/");
   };
 
   return (
@@ -155,9 +187,13 @@ const Game = () => {
           </div>
 
           <div className="absolute bottom-4 right-4 flex gap-2 z-40">
-            <img src={heart} className="w-7 md:w-10" />
-            <img src={heart} className="w-7 md:w-10" />
-            <img src={heart} className="w-7 md:w-10" />
+            {Array.from({ length: health }).map((_, i) => (
+              <img
+                key={i}
+                src={heart}
+                className={`w-7 md:w-10 ${isInvincible ? "animate-pulse" : ""}`}
+              />
+            ))}
           </div>
 
           {/* GAMEBOARD LAYOUT */}
@@ -176,9 +212,11 @@ const Game = () => {
               <Maps
                 mapId={1}
                 controlDirection={moveDir}
-                isPaused={isPaused}
+                isPaused={isPaused || health <= 0}
                 answers={gameData?.questions?.[currentQuestionIndex]?.answers}
                 onAnswerSelected={handleAnswerSelected}
+                onPlayerDeath={handlePlayerDeath}
+                isInvincible={isInvincible}
               />
             </div>
 
@@ -219,6 +257,37 @@ const Game = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4️⃣ Game Over Screen */}
+      {stage === "gameover" && (
+        <div
+          className="w-screen h-screen bg-cover bg-center relative flex items-center justify-center"
+          style={{ backgroundImage: `url(${forrest})` }}
+        >
+          <div className="bg-black/80 backdrop-blur-md rounded-2xl p-8 md:p-12 text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-red-500 mb-4">
+              GAME OVER
+            </h1>
+            <p className="text-white text-lg md:text-xl mb-8">
+              You ran out of lives!
+            </p>
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={handleRestart}
+                className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl transition-colors"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={handleBackToMenu}
+                className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white text-lg font-bold rounded-xl transition-colors"
+              >
+                Back to Menu
+              </button>
             </div>
           </div>
         </div>
