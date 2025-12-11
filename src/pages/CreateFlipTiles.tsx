@@ -189,7 +189,12 @@ function CreateFlipTiles() {
               <Typography variant="h3" className="border-none">
                 Tiles
               </Typography>
-              <Button onClick={addTile} variant="outline" size="sm">
+              <Button
+                onClick={addTile}
+                variant="outline"
+                size="sm"
+                aria-label="Add new tile"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Tile
               </Button>
@@ -212,6 +217,7 @@ function CreateFlipTiles() {
                     variant="ghost"
                     onClick={() => removeTile(tile.id)}
                     disabled={tiles.length <= 1}
+                    aria-label={`Remove tile ${index + 1}`}
                   >
                     <X className="w-4 h-4" />
                   </Button>

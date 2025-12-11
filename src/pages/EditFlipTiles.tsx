@@ -12,7 +12,6 @@ import { ArrowLeft, Plus, SaveIcon, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import api from "@/api/axios";
 import type { AxiosError } from "axios";
-import { useAuthStore } from "@/store/useAuthStore";
 
 interface Tile {
   id: string;
@@ -26,7 +25,6 @@ function randomId() {
 function EditFlipTiles() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const user = useAuthStore((state) => state.user);
 
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -65,8 +63,7 @@ function EditFlipTiles() {
           // Ensure at least one default tile for editing
           setTiles([{ id: randomId(), label: "Tile 1" }]);
         }
-      } catch (error: unknown) {
-        console.error("Fetch error:", error);
+      } catch {
         // Backend handles authorization, frontend receives 403 if unauthorized
         toast.error("Failed to load game or you don't have permission");
         // Don't auto-redirect, let user see the error state
@@ -76,10 +73,9 @@ function EditFlipTiles() {
     };
 
     if (id) {
-      console.log("EditFlipTiles mounted, fetching id:", id);
       fetchGame();
     }
-  }, [id, user]);
+  }, [id]);
 
   const addTile = () => {
     setTiles((prev) => [
@@ -144,8 +140,12 @@ function EditFlipTiles() {
     } catch (error: unknown) {
       console.error("Update error:", error);
       const axiosErr = error as AxiosError<{ message?: string }>;
-      const message = axiosErr.response?.data?.message;
-      toast.error(message ?? "Failed to update game");
+      const message =
+        axiosErr.response?.data?.message ??
+        (axiosErr.message
+          ? `Error: ${axiosErr.message}`
+          : "Failed to update game");
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
@@ -220,7 +220,11 @@ function EditFlipTiles() {
                 {existingThumbnail && !thumbnail && (
                   <div className="mb-2">
                     <img
-                      src={`${import.meta.env.VITE_API_URL}${existingThumbnail.startsWith("/") ? "" : "/"}${existingThumbnail}`}
+                      src={
+                        /^https?:\/\//.test(existingThumbnail)
+                          ? existingThumbnail
+                          : `${import.meta.env.VITE_API_URL}${existingThumbnail.startsWith("/") ? "" : "/"}${existingThumbnail}`
+                      }
                       alt="Current thumbnail"
                       className="w-32 h-32 object-cover rounded border"
                     />
@@ -249,7 +253,12 @@ function EditFlipTiles() {
               <Typography variant="h3" className="border-none">
                 Tiles
               </Typography>
-              <Button onClick={addTile} variant="outline" size="sm">
+              <Button
+                onClick={addTile}
+                variant="outline"
+                size="sm"
+                aria-label="Add new tile"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Tile
               </Button>
@@ -272,6 +281,7 @@ function EditFlipTiles() {
                     variant="ghost"
                     onClick={() => removeTile(tile.id)}
                     disabled={tiles.length <= 1}
+                    aria-label={`Remove tile ${index + 1}`}
                   >
                     <X className="w-4 h-4" />
                   </Button>
