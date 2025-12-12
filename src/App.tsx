@@ -45,7 +45,7 @@ function App() {
         <Route path="/speed-sorting/play/:id" element={<SpeedSorting />} />
         <Route path="/anagram/play/:id" element={<PlayAnagram />} />
         <Route
-          path="/pair-or-no-pair/play/:gameId"
+          path="/pair-or-no-pair/play/:id"
           element={<PairOrNoPairGame />}
         />
         <Route
