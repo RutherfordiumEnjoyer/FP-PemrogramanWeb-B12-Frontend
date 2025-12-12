@@ -37,6 +37,10 @@
   animation: floatVirus 8s ease-in-out infinite;
 }
 
+.floating-virus-reverse {
+  animation: floatVirusReverse 8s ease-in-out infinite;
+}
+
 .floating-virus:nth-child(2n) {
   animation: floatVirusReverse 10s ease-in-out infinite;
 }

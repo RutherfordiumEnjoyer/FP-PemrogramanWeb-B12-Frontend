@@ -109,9 +109,10 @@ const NightmareBackground: React.FC<NightmareBackgroundProps> = ({
 
       {/* Red Particles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {/* Left side particles */}
         {[...Array(5)].map((_, i) => (
           <div
-            key={`particle-${i}`}
+            key={`particle-left-${i}`}
             className="floating-virus absolute bg-red-600/10 rounded-full blur-2xl"
             style={{
               width: `${120 + i * 20}px`,
@@ -119,6 +120,21 @@ const NightmareBackground: React.FC<NightmareBackgroundProps> = ({
               top: `${10 + i * 15}%`,
               left: `${10 + i * 20}%`,
               animationDelay: `${i * 0.5}s`,
+            }}
+          ></div>
+        ))}
+
+        {/* Right side particles */}
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={`particle-right-${i}`}
+            className="floating-virus-reverse absolute bg-red-600/10 rounded-full blur-2xl"
+            style={{
+              width: `${100 + i * 25}px`,
+              height: `${100 + i * 25}px`,
+              top: `${15 + i * 20}%`,
+              right: `${5 + i * 15}%`,
+              animationDelay: `${i * 0.7 + 1}s`,
             }}
           ></div>
         ))}
@@ -145,8 +161,24 @@ const NightmareBackground: React.FC<NightmareBackgroundProps> = ({
       </div>
 
       {/* Corner Red Glows */}
-      <div className="fixed top-0 left-0 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="fixed bottom-0 right-0 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none translate-x-1/2 translate-y-1/2"></div>
+      <div
+        className="floating-virus fixed top-0 left-0 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2"
+        style={{ animationDelay: "1s" }}
+      ></div>
+      <div
+        className="floating-virus-reverse fixed bottom-0 right-0 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none translate-x-1/2 translate-y-1/2"
+        style={{ animationDelay: "2.5s" }}
+      ></div>
+
+      {/* Additional Corner Glows for more movement */}
+      <div
+        className="floating-virus fixed top-0 right-0 w-80 h-80 bg-red-600/8 rounded-full blur-3xl pointer-events-none translate-x-1/2 -translate-y-1/2"
+        style={{ animationDelay: "3.5s" }}
+      ></div>
+      <div
+        className="floating-virus-reverse fixed bottom-0 left-0 w-80 h-80 bg-red-600/8 rounded-full blur-3xl pointer-events-none -translate-x-1/2 translate-y-1/2"
+        style={{ animationDelay: "0.5s" }}
+      ></div>
 
       {/* Red Vignette */}
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#450a0a_100%)] pointer-events-none"></div>
@@ -156,7 +188,7 @@ const NightmareBackground: React.FC<NightmareBackgroundProps> = ({
         {[...Array(3)].map((_, i) => (
           <div
             key={`virus-spread-${i}`}
-            className="virus-spread absolute"
+            className="virus-spread floating-virus absolute"
             style={{
               width: "200px",
               height: "200px",

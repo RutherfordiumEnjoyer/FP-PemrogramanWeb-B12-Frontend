@@ -62,7 +62,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       desc: "Beware of imposters!",
       color: "yellow",
     },
-    3: { name: "BOSS RAID", desc: "Defeat the mega threat!", color: "red" },
+    3: { name: "JACKPOT RAID", desc: "Defeat the mega threat!", color: "red" },
   };
 
   // Auto-start game when component mounts (when user clicks INITIALIZE_GAME)
@@ -183,8 +183,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
     } else if (currentLevel === 3) {
       // Level 3: Lebih cepat tapi tidak extreme
       if (activeType === "boss") {
-        // Jackpot: Diam 4 detik untuk diklik 4x
-        newSpeed = 4000;
+        // Jackpot: Mengikuti kecepatan level 3, tapi sedikit lebih lambat
+        newSpeed = Math.max(700, 1100 - score * 5);
       } else {
         newSpeed = Math.max(550, 950 - score * 5);
       }
@@ -198,8 +198,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
       // CEK MISS
       if (!isHitRef.current && activeIndex !== null) {
         if (activeType === "boss") {
-          // JACKPOT MISS: -15 poin!
-          setScore((prev) => Math.max(0, prev - 15));
+          // JACKPOT MISS: -30 poin!
+          setScore((prev) => Math.max(0, prev - 30));
           playSound("error");
         } else if (activeType !== "trap") {
           setCombo(0);
@@ -213,36 +213,70 @@ const GameBoard: React.FC<GameBoardProps> = ({
       setActiveIndex(randomIndex);
 
       const chance = Math.random();
+      const isDataLeak = timeLeft < 10; // Bonus spawn rate when time is low
 
       // Level 1 normal: Robot 60%, Shield 21%, Ransomware 19%
+      // Data Leak: Ransomware 29% (+10%), Shield 21%, Robot 50%
       if (currentLevel === 1) {
-        if (chance >= 0.81)
-          setActiveType("golden"); // 19% ransomware
-        else if (chance >= 0.6)
-          setActiveType("trap"); // 21% shield
-        else setActiveType("enemy"); // 60% normal robot
+        if (isDataLeak) {
+          if (chance >= 0.71)
+            setActiveType("golden"); // 29% ransomware (+10%)
+          else if (chance >= 0.5)
+            setActiveType("trap"); // 21% shield
+          else setActiveType("enemy"); // 50% robot
+        } else {
+          if (chance >= 0.81)
+            setActiveType("golden"); // 19% ransomware
+          else if (chance >= 0.6)
+            setActiveType("trap"); // 21% shield
+          else setActiveType("enemy"); // 60% normal robot
+        }
       }
       // Level 2: Robot normal paling banyak, impostor kedua, ransomware, shield
+      // Data Leak: Ransomware 35% (+10%), Impostor 27%, Shield 10%, Robot 28%
       else if (currentLevel === 2) {
-        if (chance >= 0.75)
-          setActiveType("golden"); // 25% ransomware
-        else if (chance >= 0.65)
-          setActiveType("trap"); // 10% shield (paling sedikit)
-        else if (chance >= 0.38)
-          setActiveType("phishing"); // 27% impostor
-        else setActiveType("enemy"); // 38% robot normal (terbanyak!)
+        if (isDataLeak) {
+          if (chance >= 0.65)
+            setActiveType("golden"); // 35% ransomware (+10%)
+          else if (chance >= 0.38)
+            setActiveType("phishing"); // 27% impostor
+          else if (chance >= 0.28)
+            setActiveType("trap"); // 10% shield
+          else setActiveType("enemy"); // 28% robot
+        } else {
+          if (chance >= 0.75)
+            setActiveType("golden"); // 25% ransomware
+          else if (chance >= 0.65)
+            setActiveType("trap"); // 10% shield (paling sedikit)
+          else if (chance >= 0.38)
+            setActiveType("phishing"); // 27% impostor
+          else setActiveType("enemy"); // 38% robot normal (terbanyak!)
+        }
       }
       // Level 3: Robot 40%, Ransomware 20%, Shield 15%, Impostor 15%, Jackpot 10%
+      // Data Leak: Ransomware 30% (+10%), Jackpot 10%, Shield 15%, Impostor 15%, Robot 30%
       else if (currentLevel === 3) {
-        if (chance >= 0.9)
-          setActiveType("boss"); // 10% JACKPOT!
-        else if (chance >= 0.7)
-          setActiveType("golden"); // 20% ransomware
-        else if (chance >= 0.55)
-          setActiveType("trap"); // 15% shield
-        else if (chance >= 0.4)
-          setActiveType("phishing"); // 15% impostor
-        else setActiveType("enemy"); // 40% robot normal
+        if (isDataLeak) {
+          if (chance >= 0.9)
+            setActiveType("boss"); // 10% JACKPOT!
+          else if (chance >= 0.6)
+            setActiveType("golden"); // 30% ransomware (+10%)
+          else if (chance >= 0.45)
+            setActiveType("trap"); // 15% shield
+          else if (chance >= 0.3)
+            setActiveType("phishing"); // 15% impostor
+          else setActiveType("enemy"); // 30% robot
+        } else {
+          if (chance >= 0.9)
+            setActiveType("boss"); // 10% JACKPOT!
+          else if (chance >= 0.7)
+            setActiveType("golden"); // 20% ransomware
+          else if (chance >= 0.55)
+            setActiveType("trap"); // 15% shield
+          else if (chance >= 0.4)
+            setActiveType("phishing"); // 15% impostor
+          else setActiveType("enemy"); // 40% robot normal
+        }
       }
     }, gameSpeed);
 
@@ -419,7 +453,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     🎯 JACKPOT (10% spawn)
                   </p>
                   <p className="text-green-400">Klik: +30 poin ✅</p>
-                  <p className="text-red-400">Miss: -15 poin ❌</p>
+                  <p className="text-red-400">Miss: -30 poin ❌</p>
                 </div>
               </div>
               <div className="bg-purple-900/20 border border-purple-500/30 rounded p-3 space-y-2">
@@ -694,9 +728,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
                       3 LEVEL CHALLENGE
                     </h2>
                     <div className="text-xs text-slate-400 space-y-1 mb-4">
-                      <p>Lv1: 30 pts - Data Leak Bonus</p>
-                      <p>Lv2: 70 pts - Phishing Alert</p>
-                      <p>Lv3: 120 pts - Boss Raid</p>
+                      <p>Lv1: 30 pts - Data Breach</p>
+                      <p>Lv2: 70 pts - Phishing Attack</p>
+                      <p>Lv3: 120 pts - Jackpot Raid</p>
                     </div>
                     <button
                       onClick={startGame}

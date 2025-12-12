@@ -29,6 +29,7 @@ function WhackAMoleGame() {
     isNightmareMode,
     isPlaying,
     isPaused,
+    isOnHomeScreen: view === "home", // Pass home screen state
   });
 
   // Fetch game data from backend
@@ -113,7 +114,7 @@ function WhackAMoleGame() {
       {/* Mute/Unmute Button */}
       <button
         onClick={toggleMute}
-        className={`fixed top-6 right-6 z-50 group flex items-center justify-center w-12 h-12
+        className={`fixed bottom-6 left-6 z-50 group flex items-center justify-center w-12 h-12
           bg-slate-900/80 border rounded-full backdrop-blur-sm transition-all duration-300 ${
             isNightmareMode
               ? "border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-400"
