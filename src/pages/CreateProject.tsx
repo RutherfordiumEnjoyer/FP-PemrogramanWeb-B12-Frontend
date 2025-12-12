@@ -25,11 +25,12 @@ const getIconComponent = (
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join("");
-
+  
   const icons = LucideIcons as unknown as Record<
     string,
     React.ComponentType<{ className?: string }>
   >;
+  
   const IconComponent = icons[pascalCase];
 
   return IconComponent || LucideIcons.HelpCircle;
@@ -59,8 +60,11 @@ export default function CreateProject() {
   }, []);
 
   const handleTemplateClick = (template: GameTemplate) => {
+    // --- UPDATE LOGIC DI SINI ---
     if (template.slug === "quiz") {
       navigate("/create-quiz");
+    } else if (template.slug === "airplane") {
+      navigate("/create-airplane"); // Arahkan ke halaman creator pesawat
     } else {
       toast.error(`${template.name} template is coming soon!`, {
         duration: 3000,
@@ -118,7 +122,6 @@ export default function CreateProject() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {templates.map((template) => {
               const IconComponent = getIconComponent(template.logo);
-
               return (
                 <Card
                   key={template.id}

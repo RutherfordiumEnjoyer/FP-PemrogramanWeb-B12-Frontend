@@ -9,9 +9,10 @@ import CreateQuiz from "./pages/CreateQuiz";
 import CreateProject from "./pages/CreateProject";
 import EditQuiz from "./pages/EditQuiz";
 import Quiz from "./pages/Quiz";
-import AirplaneMathGame from "./pages/airplane-math";
 import ProtectedRoute from "./routes/ProtectedRoutes";
 import AirplaneGeneralGame from "./pages/airplane";
+import CreateAirplane from "./pages/CreateAirplane";
+import EditAirplane from "./pages/EditAirplane";
 
 function App() {
   return (
@@ -22,7 +23,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/sandbox" element={<Sandbox />} />
         <Route path="/quiz/play/:id" element={<Quiz />} />
-        <Route path="/airplane-math" element={<AirplaneMathGame />} />
+        
 
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
@@ -30,7 +31,9 @@ function App() {
           <Route path="/create-projects" element={<CreateProject />} />
           <Route path="/create-quiz" element={<CreateQuiz />} />
           <Route path="/quiz/edit/:id" element={<EditQuiz />} />
-          <Route path="/game/play/airplane" element={<AirplaneGeneralGame />} />
+          <Route path="/game/play/airplane/:id" element={<AirplaneGeneralGame />} />
+          <Route path="/create-airplane" element={<CreateAirplane />} />
+          <Route path="/game/edit/airplane/:id" element={<EditAirplane />} />
         </Route>
       </Routes>
     </>

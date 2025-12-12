@@ -22,7 +22,6 @@ import iconHeart from "../assets/images/icon-heart.svg";
 import iconHeartSolid from "../assets/images/icon-heart-solid.svg";
 import iconPlay from "../assets/images/icon-play.svg";
 import iconVector from "../assets/images/icon-vector.svg";
-import airplaneGameImage from "../../public/assets/game/airplane/airplane.png";
 
 type GameTemplate = {
   id: string;
@@ -183,17 +182,30 @@ export default function HomePage() {
   };
 
   const GameCard = ({ game }: { game: Game }) => {
-    const handlePlayGame = () => {
-      const isAirplaneGame = game.name.toLowerCase().includes("airplane");
+    const isAirplaneGame = game.name.toLowerCase().includes("airplane");
 
+    const handlePlayGame = () => {
+      // Redirect Logic
       if (isAirplaneGame) {
-        window.location.href = "/game/play/airplane";
+        window.location.href = `/game/play/airplane/${game.id}`;
       } else {
         window.location.href = `/quiz/play/${game.id}`;
       }
     };
 
-    const isAirplaneGame = game.name.toLowerCase().includes("airplane");
+    // --- LOGIC GAMBAR YANG BENAR ---
+    // Prioritaskan gambar dari database (hasil upload)
+    let imageUrl = thumbnailPlaceholder;
+
+    if (game.thumbnail_image && game.thumbnail_image !== 'default_image.jpg') {
+        // Cek apakah URL absolut atau relatif
+        if (game.thumbnail_image.startsWith('http')) {
+            imageUrl = game.thumbnail_image;
+        } else {
+            // Jika relatif (uploads/...), tambahkan URL Backend
+            imageUrl = `${import.meta.env.VITE_API_URL}/${game.thumbnail_image}`;
+        }
+    }
 
     return (
       <Card
@@ -202,15 +214,13 @@ export default function HomePage() {
       >
         <div className="p-4 pb-0">
           <img
-            src={
-              isAirplaneGame
-                ? airplaneGameImage
-                : game.thumbnail_image
-                  ? `${import.meta.env.VITE_API_URL}/${game.thumbnail_image}`
-                  : thumbnailPlaceholder
-            }
+            src={imageUrl}
             alt={game.name}
             className="w-full aspect-video object-cover rounded-md"
+            onError={(e) => {
+                // Fallback jika gambar rusak
+                e.currentTarget.src = thumbnailPlaceholder;
+            }}
           />
         </div>
 
@@ -223,11 +233,11 @@ export default function HomePage() {
               {game.name}
             </Typography>
             <Badge variant="secondary" className="shrink-0">
-              Quiz
+              {isAirplaneGame ? "Airplane" : "Quiz"}
             </Badge>
           </div>
 
-          <Typography variant="muted" className="text-sm mb-4">
+          <Typography variant="muted" className="text-sm mb-4 line-clamp-2">
             {game.description}
           </Typography>
 

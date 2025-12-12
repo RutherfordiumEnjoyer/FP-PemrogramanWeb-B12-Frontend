@@ -57,9 +57,16 @@ export default function MyProjectsPage() {
     fetchProjects();
   }, []);
 
+  // --- LOGIC DELETE (Sudah disesuaikan endpointnya) ---
   const handleDeleteProject = async (projectId: string) => {
     try {
-      await api.delete(`/api/game/game-type/quiz/${projectId}`);
+      // Cek tipe game dari list state local
+      const project = projects.find((p) => p.id === projectId);
+      const isAirplane = project?.name.toLowerCase().includes("airplane");
+      const endpointType = isAirplane ? "airplane" : "quiz";
+
+      await api.delete(`/api/game/game-type/${endpointType}/${projectId}`);
+      
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
       toast.success("Project deleted successfully!");
     } catch (err) {
@@ -68,12 +75,19 @@ export default function MyProjectsPage() {
     }
   };
 
+  // --- LOGIC UPDATE STATUS (Sudah disesuaikan endpointnya) ---
   const handleUpdateStatus = async (gameId: string, isPublish: boolean) => {
     try {
+      // 1. Cek tipe game
+      const project = projects.find((p) => p.id === gameId);
+      const isAirplane = project?.name.toLowerCase().includes("airplane");
+      const endpointType = isAirplane ? "airplane" : "quiz";
+
       const form = new FormData();
       form.append("is_publish", String(isPublish));
 
-      await api.patch(`/api/game/game-type/quiz/${gameId}`, form);
+      // 2. Tembak ke endpoint yang benar
+      await api.patch(`/api/game/game-type/${endpointType}/${gameId}`, form);
 
       setProjects((prev) =>
         prev.map((p) =>
@@ -132,7 +146,22 @@ export default function MyProjectsPage() {
 
   const ProjectList = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-1 mt-6">
-      {projects.map((project) => (
+      {projects.map((project) => {
+        // --- DETEKSI TIPE GAME ---
+        const isAirplaneGame = project.name.toLowerCase().includes("airplane");
+        
+        // --- FIX URL GAMBAR ---
+        let imageUrl = thumbnailPlaceholder;
+        if (project.thumbnail_image && project.thumbnail_image !== 'default_image.jpg') {
+            if (project.thumbnail_image.startsWith('http')) {
+                imageUrl = project.thumbnail_image;
+            } else {
+                // Tambahkan Base URL jika path lokal
+                imageUrl = `${import.meta.env.VITE_API_URL}/${project.thumbnail_image}`;
+            }
+        }
+
+        return (
         <Card
           key={project.id}
           className="relative p-4 h-fit sm:h-80 md:h-fit cursor-pointer hover:shadow-lg transition-shadow"
@@ -140,17 +169,10 @@ export default function MyProjectsPage() {
           <div className="w-full h-full flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="w-full h-full flex flex-col md:flex-row md:items-center gap-4">
               <img
-                src={
-                  project.thumbnail_image
-                    ? `${import.meta.env.VITE_API_URL}/${project.thumbnail_image}`
-                    : thumbnailPlaceholder
-                }
-                alt={
-                  project.thumbnail_image
-                    ? project.name
-                    : "Placeholder Thumbnail"
-                }
+                src={imageUrl}
+                alt={project.name}
                 className="w-full md:w-28 md:h-24 rounded-md object-cover"
+                onError={(e) => { e.currentTarget.src = thumbnailPlaceholder; }}
               />
               <div className="flex flex-col md:gap-6 justify-between items-stretch h-full w-full">
                 <div className="flex justify-between">
@@ -179,30 +201,43 @@ export default function MyProjectsPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-6 md:mt-2">
+                  {/* TOMBOL PLAY */}
                   {project.is_published ? (
                     <Button
                       variant="outline"
                       size="sm"
                       className="h-7"
                       onClick={() => {
-                        navigate(`/quiz/play/${project.id}`);
+                        if (isAirplaneGame) {
+                            navigate(`/game/play/airplane/${project.id}`);
+                        } else {
+                            navigate(`/quiz/play/${project.id}`);
+                        }
                       }}
                     >
                       <Play />
                       Play
                     </Button>
                   ) : null}
+
+                  {/* TOMBOL EDIT */}
                   <Button
                     variant="outline"
                     size="sm"
                     className="h-7"
                     onClick={() => {
-                      navigate(`/quiz/edit/${project.id}`);
+                      if (isAirplaneGame) {
+                          navigate(`/game/edit/airplane/${project.id}`);
+                      } else {
+                          navigate(`/quiz/edit/${project.id}`);
+                      }
                     }}
                   >
                     <Edit />
                     Edit
                   </Button>
+
+                  {/* TOMBOL PUBLISH / UNPUBLISH */}
                   {project.is_published ? (
                     <Button
                       variant="outline"
@@ -228,6 +263,8 @@ export default function MyProjectsPage() {
                       Publish
                     </Button>
                   )}
+
+                  {/* TOMBOL DELETE */}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -282,7 +319,7 @@ export default function MyProjectsPage() {
             </div>
           </div>
         </Card>
-      ))}
+      );})}
     </div>
   );
 
