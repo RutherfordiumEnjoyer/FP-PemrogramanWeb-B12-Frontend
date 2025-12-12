@@ -36,20 +36,55 @@ export const useGameAudio = ({
     if (normalAudioRef.current) {
       normalAudioRef.current.loop = true;
       normalAudioRef.current.volume = 0.3;
+      normalAudioRef.current.preload = "auto"; // Preload for instant playback
+      // Ensure continuous playback - restart if ended unexpectedly
+      normalAudioRef.current.addEventListener("ended", () => {
+        if (normalAudioRef.current && !normalAudioRef.current.paused) {
+          normalAudioRef.current.currentTime = 0;
+          normalAudioRef.current.play().catch(() => {});
+        }
+      });
     }
     if (nightmareAudioRef.current) {
       nightmareAudioRef.current.loop = true;
       nightmareAudioRef.current.volume = 0.3;
+      nightmareAudioRef.current.preload = "auto"; // Preload for instant playback
+      // Ensure continuous playback - restart if ended unexpectedly
+      nightmareAudioRef.current.addEventListener("ended", () => {
+        if (nightmareAudioRef.current && !nightmareAudioRef.current.paused) {
+          nightmareAudioRef.current.currentTime = 0;
+          nightmareAudioRef.current.play().catch(() => {});
+        }
+      });
     }
 
     // Set audio properties for interface music
     if (interfaceNormalRef.current) {
       interfaceNormalRef.current.loop = true;
       interfaceNormalRef.current.volume = 0.3;
+      interfaceNormalRef.current.preload = "auto"; // Preload for instant playback
+      // Ensure continuous playback - restart if ended unexpectedly
+      interfaceNormalRef.current.addEventListener("ended", () => {
+        if (interfaceNormalRef.current && !interfaceNormalRef.current.paused) {
+          interfaceNormalRef.current.currentTime = 0;
+          interfaceNormalRef.current.play().catch(() => {});
+        }
+      });
     }
     if (interfaceNightmareRef.current) {
       interfaceNightmareRef.current.loop = true;
       interfaceNightmareRef.current.volume = 0.3;
+      interfaceNightmareRef.current.preload = "auto"; // Preload for instant playback
+      // Ensure continuous playback - restart if ended unexpectedly
+      interfaceNightmareRef.current.addEventListener("ended", () => {
+        if (
+          interfaceNightmareRef.current &&
+          !interfaceNightmareRef.current.paused
+        ) {
+          interfaceNightmareRef.current.currentTime = 0;
+          interfaceNightmareRef.current.play().catch(() => {});
+        }
+      });
     }
 
     setIsAudioReady(true);
@@ -80,28 +115,32 @@ export const useGameAudio = ({
     if (!isAudioReady) return;
 
     if (isPlaying) {
-      // Game started - stop all interface music and start game music
-      if (interfaceNormalRef.current && !interfaceNormalRef.current.paused) {
+      // Game started - immediately stop interface music and start game music
+      const gameAudio = isNightmareMode
+        ? nightmareAudioRef.current
+        : normalAudioRef.current;
+
+      // Stop interface music instantly
+      if (interfaceNormalRef.current) {
         interfaceNormalRef.current.pause();
         interfaceNormalRef.current.currentTime = 0;
       }
-      if (
-        interfaceNightmareRef.current &&
-        !interfaceNightmareRef.current.paused
-      ) {
+      if (interfaceNightmareRef.current) {
         interfaceNightmareRef.current.pause();
         interfaceNightmareRef.current.currentTime = 0;
       }
 
-      // Start game music
-      const gameAudio = isNightmareMode
-        ? nightmareAudioRef.current
-        : normalAudioRef.current;
-      if (gameAudio && !isMuted) {
+      // Start game music immediately without checking paused state
+      if (gameAudio) {
+        gameAudio.currentTime = 0; // Reset to start
         gameAudio.volume = 0.3;
-        gameAudio.play().catch(() => {
-          // Silent fail - autoplay might be blocked by browser
-        });
+        // Use synchronous play for instant start
+        const playPromise = gameAudio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Silent fail - autoplay might be blocked by browser
+          });
+        }
       }
     } else if (isOnHomeScreen) {
       // On home screen - play interface music
@@ -112,14 +151,14 @@ export const useGameAudio = ({
         ? interfaceNormalRef.current
         : interfaceNightmareRef.current;
 
-      // Stop other interface music
+      // Stop other interface music when switching modes
       if (otherInterface && !otherInterface.paused) {
         otherInterface.pause();
         otherInterface.currentTime = 0;
       }
 
-      // Play current interface music - restart if already playing
-      if (currentInterface && !isMuted) {
+      // Play current interface music when switching modes
+      if (currentInterface) {
         currentInterface.pause();
         currentInterface.currentTime = 0;
         currentInterface.volume = 0.3;
@@ -128,7 +167,7 @@ export const useGameAudio = ({
         });
       }
     }
-  }, [isNightmareMode, isAudioReady, isMuted, isOnHomeScreen, isPlaying]);
+  }, [isNightmareMode, isAudioReady, isOnHomeScreen, isPlaying]); // Remove isMuted from dependencies
 
   // Handle music switching when mode changes during gameplay
   useEffect(() => {
@@ -148,7 +187,7 @@ export const useGameAudio = ({
     }
 
     // Play current audio
-    if (currentAudio && !isMuted && !isPaused) {
+    if (currentAudio && !isPaused) {
       if (currentAudio.paused) {
         currentAudio.volume = 0.3;
         currentAudio.play().catch(() => {
@@ -156,7 +195,7 @@ export const useGameAudio = ({
         });
       }
     }
-  }, [isNightmareMode, isPlaying, isAudioReady, isMuted, isPaused]);
+  }, [isNightmareMode, isPlaying, isAudioReady, isPaused]); // Remove isMuted from dependencies
 
   // Handle pause/resume
   useEffect(() => {
@@ -169,13 +208,13 @@ export const useGameAudio = ({
     if (currentAudio) {
       if (isPaused) {
         currentAudio.pause();
-      } else if (isPlaying && !isMuted) {
+      } else if (isPlaying) {
         currentAudio.play().catch(() => {
           // Silent fail - autoplay might be blocked by browser
         });
       }
     }
-  }, [isPaused, isPlaying, isNightmareMode, isAudioReady, isMuted]);
+  }, [isPaused, isPlaying, isNightmareMode, isAudioReady]); // Remove isMuted from dependencies
 
   // Stop music when game stops
   useEffect(() => {
@@ -210,6 +249,27 @@ export const useGameAudio = ({
       }
       if (interfaceNightmareRef.current) {
         interfaceNightmareRef.current.muted = newMuted;
+      }
+
+      // If unmuting, start playing the appropriate audio if not already playing
+      if (!newMuted) {
+        if (isPlaying) {
+          // Playing game - start game music if paused
+          const gameAudio = isNightmareMode
+            ? nightmareAudioRef.current
+            : normalAudioRef.current;
+          if (gameAudio && gameAudio.paused) {
+            gameAudio.play().catch(() => {});
+          }
+        } else if (isOnHomeScreen) {
+          // On home screen - start interface music if paused
+          const interfaceAudio = isNightmareMode
+            ? interfaceNightmareRef.current
+            : interfaceNormalRef.current;
+          if (interfaceAudio && interfaceAudio.paused) {
+            interfaceAudio.play().catch(() => {});
+          }
+        }
       }
 
       return newMuted;
