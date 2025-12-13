@@ -16,7 +16,6 @@ import type { AxiosError } from "axios";
 interface Tile {
   id: string;
   label: string;
-  color: string;
 }
 
 function randomId() {
@@ -37,48 +36,32 @@ function EditFlipTiles() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const palette = [
-      "#ef4444",
-      "#3b82f6",
-      "#22c55e",
-      "#a855f7",
-      "#f97316",
-      "#eab308",
-      "#06b6d4",
-      "#f43f5e",
-      "#84cc16",
-      "#10b981",
-      "#6366f1",
-      "#0ea5e9",
-    ];
     const fetchGame = async () => {
       try {
         setLoading(true);
         const response = await api.get(`/api/game/game-type/flip-tiles/${id}`);
         const game = response.data.data;
 
-        setTitle(game.title);
+        setTitle(game.name);
         setDescription(game.description || "");
         setExistingThumbnail(game.thumbnail_image || "");
         setIsPublished(game.is_published);
 
-        // Use returned tiles directly
-        if (game.tiles && game.tiles.length > 0) {
+        // Parse game_json to get tiles
+        if (
+          game.game_json &&
+          game.game_json.tiles &&
+          game.game_json.tiles.length > 0
+        ) {
           setTiles(
-            game.tiles.map(
-              (t: { label: string; color?: string }, idx: number) => ({
-                id: randomId(),
-                label: t.label,
-                color:
-                  t.color && t.color.trim()
-                    ? t.color
-                    : palette[idx % palette.length],
-              }),
-            ),
+            game.game_json.tiles.map((t: { label: string }) => ({
+              id: randomId(),
+              label: t.label,
+            })),
           );
         } else {
           // Ensure at least one default tile for editing
-          setTiles([{ id: randomId(), label: "Tile 1", color: "#3b82f6" }]);
+          setTiles([{ id: randomId(), label: "Tile 1" }]);
         }
       } catch {
         // Backend handles authorization, frontend receives 403 if unauthorized
@@ -95,27 +78,9 @@ function EditFlipTiles() {
   }, [id]);
 
   const addTile = () => {
-    const palette = [
-      "#ef4444",
-      "#3b82f6",
-      "#22c55e",
-      "#a855f7",
-      "#f97316",
-      "#eab308",
-      "#06b6d4",
-      "#f43f5e",
-      "#84cc16",
-      "#10b981",
-      "#6366f1",
-      "#0ea5e9",
-    ];
     setTiles((prev) => [
       ...prev,
-      {
-        id: randomId(),
-        label: `Tile ${prev.length + 1}`,
-        color: palette[prev.length % palette.length],
-      },
+      { id: randomId(), label: `Tile ${prev.length + 1}` },
     ]);
   };
 
@@ -130,12 +95,6 @@ function EditFlipTiles() {
   const updateTileLabel = (tileId: string, label: string) => {
     setTiles((prev) =>
       prev.map((t) => (t.id === tileId ? { ...t, label } : t)),
-    );
-  };
-
-  const updateTileColor = (tileId: string, color: string) => {
-    setTiles((prev) =>
-      prev.map((t) => (t.id === tileId ? { ...t, color } : t)),
     );
   };
 
@@ -157,22 +116,18 @@ function EditFlipTiles() {
 
     try {
       const formData = new FormData();
-      formData.append("title", title);
+      formData.append("name", title);
       formData.append("description", description);
       if (thumbnail) {
-        formData.append("thumbnail", thumbnail);
+        formData.append("thumbnail_image", thumbnail);
       }
+      formData.append("game_template_slug", "flip-tiles");
+      formData.append("is_published", publish.toString());
 
-      // Send tiles as stringified JSON with color
-      formData.append(
-        "tiles",
-        JSON.stringify(
-          tiles.map((t) => ({
-            label: t.label,
-            color: t.color,
-          })),
-        ),
-      );
+      const gameJson = {
+        tiles: tiles.map((t) => ({ label: t.label })),
+      };
+      formData.append("game_json", JSON.stringify(gameJson));
 
       await api.patch(`/api/game/game-type/flip-tiles/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -320,14 +275,6 @@ function EditFlipTiles() {
                     onChange={(e) => updateTileLabel(tile.id, e.target.value)}
                     placeholder={`Tile ${index + 1} label`}
                     className="flex-1"
-                  />
-                  <input
-                    type="color"
-                    value={tile.color}
-                    onChange={(e) => updateTileColor(tile.id, e.target.value)}
-                    aria-label={`Pick color for tile ${index + 1}`}
-                    className="w-10 h-10 rounded cursor-pointer border border-slate-200"
-                    title="Tile color"
                   />
                   <Button
                     size="sm"

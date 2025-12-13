@@ -30,7 +30,7 @@ type GameData = {
   title: string;
   description: string;
   thumbnail_image: string | null;
-  tiles: { label: string; color: string }[];
+  tiles: { label: string }[];
 };
 
 function randomId() {
@@ -88,35 +88,31 @@ export default function FlipTiles() {
         const gameResponse = await api.get(
           `/api/game/game-type/flip-tiles/${id}`,
         );
-        const game = gameResponse.data.data as GameData;
+        const game = gameResponse.data.data;
         setGameData(game);
 
-        const palette = [
-          "#ef4444",
-          "#3b82f6",
-          "#22c55e",
-          "#a855f7",
-          "#f97316",
-          "#eab308",
-          "#06b6d4",
-          "#f43f5e",
-          "#84cc16",
-          "#10b981",
-          "#6366f1",
-          "#0ea5e9",
-        ];
-
-        if (game.tiles && game.tiles.length) {
+        if (game.tiles) {
+          const palette = [
+            "bg-red-500",
+            "bg-blue-500",
+            "bg-green-500",
+            "bg-purple-500",
+            "bg-pink-500",
+            "bg-indigo-500",
+            "bg-yellow-500",
+            "bg-orange-500",
+            "bg-teal-500",
+            "bg-fuchsia-500",
+            "bg-cyan-500",
+            "bg-lime-500",
+          ];
           setTiles(
-            game.tiles.map((t, idx) => ({
+            game.tiles.map((t: { label: string }, idx: number) => ({
               id: randomId(),
               label: t.label,
               flipped: false,
               removed: false,
-              color:
-                t.color && t.color.trim()
-                  ? t.color
-                  : palette[idx % palette.length],
+              color: palette[idx % palette.length],
             })),
           );
         }
@@ -141,22 +137,21 @@ export default function FlipTiles() {
       // Fallback: show demo tiles so page isn't stuck loading
       const demoTiles = Array.from({ length: 12 }, (_, i) => ({
         label: `Demo ${i + 1}`,
-        color: [
-          "bg-red-500",
-          "bg-blue-500",
-          "bg-green-500",
-          "bg-purple-500",
-          "bg-pink-500",
-          "bg-indigo-500",
-          "bg-yellow-500",
-          "bg-orange-500",
-          "bg-teal-500",
-          "bg-fuchsia-500",
-          "bg-cyan-500",
-          "bg-lime-500",
-        ][i % 12],
       }));
-
+      const palette = [
+        "bg-red-500",
+        "bg-blue-500",
+        "bg-green-500",
+        "bg-purple-500",
+        "bg-pink-500",
+        "bg-indigo-500",
+        "bg-yellow-500",
+        "bg-orange-500",
+        "bg-teal-500",
+        "bg-fuchsia-500",
+        "bg-cyan-500",
+        "bg-lime-500",
+      ];
       setGameData({
         id: "demo",
         title: "Flip Tiles Demo",
@@ -165,12 +160,12 @@ export default function FlipTiles() {
         tiles: demoTiles,
       });
       setTiles(
-        demoTiles.map((t) => ({
+        demoTiles.map((t, idx) => ({
           id: randomId(),
           label: t.label,
           flipped: false,
           removed: false,
-          color: t.color,
+          color: palette[idx % palette.length],
         })),
       );
       setLoading(false);
@@ -334,13 +329,27 @@ export default function FlipTiles() {
     if (!gameData?.tiles) return;
 
     // Re-initialize tiles from gameData
+    const palette = [
+      "bg-red-500",
+      "bg-blue-500",
+      "bg-green-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-yellow-500",
+      "bg-orange-500",
+      "bg-teal-500",
+      "bg-fuchsia-500",
+      "bg-cyan-500",
+      "bg-lime-500",
+    ];
     setTiles(
-      gameData.tiles.map((t) => ({
+      gameData.tiles.map((t: { label: string }, idx: number) => ({
         id: randomId(),
         label: t.label,
         flipped: false,
         removed: false,
-        color: t.color,
+        color: palette[idx % palette.length],
       })),
     );
     setZoomedTile(null);
@@ -681,7 +690,7 @@ export default function FlipTiles() {
                     perspective: "1000px",
                   }}
                   onClick={() => {
-                    if (!gameData.tiles || gameData.tiles.length === 0) return;
+                    if (gameData.tiles.length === 0) return;
                     const el = cardRefs.current[tile.id];
                     if (el) {
                       const rect = el.getBoundingClientRect();
@@ -715,17 +724,13 @@ export default function FlipTiles() {
                   >
                     {/* Front Face (Label / Color) - Visible at 0deg */}
                     <div
-                      className={`absolute inset-0 w-full h-full rounded-xl flex items-center justify-center font-bold text-white shadow-md border-t border-white/30 ${tile.color.startsWith("bg-") ? tile.color : ""} bg-gradient-to-br from-white/10 to-black/5 p-4 text-center leading-snug break-words`}
+                      className={`absolute inset-0 w-full h-full rounded-xl flex items-center justify-center font-bold text-white shadow-md border-t border-white/30 ${tile.color} bg-gradient-to-br from-white/10 to-black/5 p-4 text-center leading-snug break-words`}
                       style={{
                         backfaceVisibility: "hidden", // Crucial: hide when flipped
                         WebkitBackfaceVisibility: "hidden",
                         fontSize: `clamp(0.8rem, ${tileHeight / 90}rem, 1.25rem)`,
                         textShadow: "0 2px 2px rgba(0,0,0,0.2)",
                         transform: "rotateY(0deg)", // Enforce front orientation
-                        // Support hex/rgb colors from backend
-                        backgroundColor: tile.color.startsWith("bg-")
-                          ? undefined
-                          : tile.color,
                       }}
                     >
                       {tile.label}
@@ -803,17 +808,14 @@ export default function FlipTiles() {
                 >
                   {/* Front Face (Zoom) */}
                   <div
-                    className={`absolute inset-0 w-full h-full backface-hidden rounded-xl flex items-center justify-center font-bold text-white shadow-inner border-4 border-slate-100 ${zoomedTileData.color.startsWith("bg-") ? zoomedTileData.color : ""} bg-gradient-to-br from-white/10 to-black/5`}
+                    className={`absolute inset-0 w-full h-full backface-hidden rounded-xl flex items-center justify-center font-bold text-white shadow-inner border-4 border-slate-100 ${zoomedTileData.color} bg-gradient-to-br from-white/10 to-black/5`}
                     style={{
                       backfaceVisibility: "hidden",
                       WebkitBackfaceVisibility: "hidden",
                       transform: "rotateY(0deg)",
-                      backgroundColor: zoomedTileData.color.startsWith("bg-")
-                        ? undefined
-                        : zoomedTileData.color,
                     }}
                   >
-                    <div className="p-8 text-center leading-tight break-words w-full max-h-full overflow-y-auto flex items-center justify-center text-4xl md:text-6xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                    <div className="p-8 text-center leading-tight break-words w-full max-h-full overflow-y-auto flex items-center justify-center text-4xl md:text-5xl">
                       {zoomedTileData.label}
                     </div>
                   </div>
