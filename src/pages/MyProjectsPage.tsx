@@ -32,8 +32,8 @@ type Project = {
   description: string;
   thumbnail_image: string | null;
   is_published: boolean;
-  game_template: number;
-  game_template_slug?: string;
+  game_template_name: string;
+  game_template_slug: string;
 };
 
 export default function MyProjectsPage() {
@@ -42,45 +42,14 @@ export default function MyProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper function to get edit route based on game template
-  const getEditRoute = (project: Project) => {
-    const slug = project.game_template_slug;
-    if (slug === "type-the-answer") {
-      return `/type-the-answer/edit/${project.id}`;
-    }
-    // Default to quiz edit route
-    return `/quiz/edit/${project.id}`;
-  };
-
-  // Helper function to get play route based on game template
-  const getPlayRoute = (project: Project) => {
-    const slug = project.game_template_slug;
-    if (slug === "type-the-answer") {
-      return `/type-the-answer/play/${project.id}`;
-    }
-    // Default to quiz play route
-    return `/quiz/play/${project.id}`;
-  };
-
-  // Helper function to get API endpoint based on game template
-  const getApiEndpoint = (project: Project) => {
-    const slug = project.game_template_slug;
-    if (slug === "type-the-answer") {
-      return `/api/game/game-type/type-the-answer`;
-    }
-    // Default to quiz endpoint
-    return `/api/game/game-type/quiz`;
-  };
-
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
         const response = await api.get("/api/auth/me/game");
         setProjects(response.data.data);
-      } catch (err) {
+      } catch {
         setError("Failed to fetch projects. Please try again later.");
-        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -88,36 +57,40 @@ export default function MyProjectsPage() {
     fetchProjects();
   }, []);
 
-  const handleDeleteProject = async (project: Project) => {
+  const handleDeleteProject = async (
+    projectTemplate: string,
+    projectId: string,
+  ) => {
     try {
-      const endpoint = getApiEndpoint(project);
-      await api.delete(`${endpoint}/${project.id}`);
-      setProjects((prev) => prev.filter((p) => p.id !== project.id));
+      await api.delete(`/api/game/game-type/${projectTemplate}/${projectId}`);
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
       toast.success("Project deleted successfully!");
-    } catch (err) {
-      console.error("Failed to delete project:", err);
+    } catch {
       toast.error("Failed to delete project. Please try again.");
     }
   };
 
-  const handleUpdateStatus = async (project: Project, isPublish: boolean) => {
+  const handleUpdateStatus = async (
+    projectTemplate: string,
+    gameId: string,
+    isPublish: boolean,
+  ) => {
     try {
-      const endpoint = getApiEndpoint(project);
-      await api.patch(`${endpoint}/${project.id}/status`, {
-        status: isPublish ? "PUBLISHED" : "DRAFT",
-      });
+      const form = new FormData();
+      form.append("is_publish", String(isPublish));
+
+      await api.patch(`/api/game/game-type/${projectTemplate}/${gameId}`, form);
 
       setProjects((prev) =>
         prev.map((p) =>
-          p.id === project.id ? { ...p, is_published: isPublish } : p,
+          p.id === gameId ? { ...p, is_published: isPublish } : p,
         ),
       );
 
       toast.success(
         isPublish ? "Published successfully" : "Unpublished successfully",
       );
-    } catch (err) {
-      console.error("Failed to update publish status:", err);
+    } catch {
       toast.error("Failed to update status. Please try again.");
     }
   };
@@ -211,23 +184,29 @@ export default function MyProjectsPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-6 md:mt-2">
+                  {project.is_published ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7"
+                      onClick={() => {
+                        navigate(
+                          `/${project.game_template_slug}/play/${project.id}`,
+                        );
+                      }}
+                    >
+                      <Play />
+                      Play
+                    </Button>
+                  ) : null}
                   <Button
                     variant="outline"
                     size="sm"
                     className="h-7"
                     onClick={() => {
-                      navigate(getPlayRoute(project));
-                    }}
-                  >
-                    <Play />
-                    Play
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7"
-                    onClick={() => {
-                      navigate(getEditRoute(project));
+                      navigate(
+                        `/${project.game_template_slug}/edit/${project.id}`,
+                      );
                     }}
                   >
                     <Edit />
@@ -239,7 +218,11 @@ export default function MyProjectsPage() {
                       size="sm"
                       className="h-7"
                       onClick={() => {
-                        handleUpdateStatus(project, false);
+                        handleUpdateStatus(
+                          project.game_template_slug,
+                          project.id,
+                          false,
+                        );
                       }}
                     >
                       <EyeOff />
@@ -251,7 +234,11 @@ export default function MyProjectsPage() {
                       size="sm"
                       className="h-7"
                       onClick={() => {
-                        handleUpdateStatus(project, true);
+                        handleUpdateStatus(
+                          project.game_template_slug,
+                          project.id,
+                          true,
+                        );
                       }}
                     >
                       <Eye />
@@ -285,7 +272,10 @@ export default function MyProjectsPage() {
                         <AlertDialogAction
                           className="bg-red-600 hover:bg-red-700"
                           onClick={() => {
-                            handleDeleteProject(project);
+                            handleDeleteProject(
+                              project.game_template_slug,
+                              project.id,
+                            );
                           }}
                         >
                           Yes, Delete
