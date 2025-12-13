@@ -416,6 +416,19 @@ export default function TypeSpeed() {
         </div>
       )}
 
+      <style>
+        {`
+    @keyframes slideDown {
+      from { transform: translateY(-100px); opacity: 0;}
+      to { transform: translateY(0); opacity: 1;}
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0);}
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+      20%, 40%, 60%, 80% { transform: translateX(8px); }
+    }
+  `}
+      </style>
       <h1 className="text-3xl font-bold mb-4 text-blue-900">
         Type Speed Challenge
       </h1>
