@@ -759,7 +759,7 @@ const PairOrNoPairGame = () => {
   }, []);
 
   // 1. FETCH DATA
-  const { id: gameId } = useParams<{ id: string }>();
+  const { gameId } = useParams<{ gameId: string }>();
 
   useEffect(() => {
     const fallbackItems = [
