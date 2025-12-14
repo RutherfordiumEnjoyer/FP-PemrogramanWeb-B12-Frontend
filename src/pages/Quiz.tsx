@@ -62,9 +62,8 @@ function Quiz() {
           `/api/game/game-type/quiz/${id}/play/public`,
         );
         setQuiz(response.data.data);
-      } catch (err) {
+      } catch {
         setError("Failed to load quiz.");
-        console.error(err);
         toast.error("Failed to load quiz.");
       } finally {
         setLoading(false);
@@ -79,24 +78,26 @@ function Quiz() {
   const questions = quiz.questions;
   const isLastQuestion = currentQuestion === questions.length - 1;
   const isFirstQuestion = currentQuestion === 0;
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const progress = (currentQuestion / questions.length) * 100;
 
   const handleNext = () => {
     if (selectedAnswer === null) return;
 
-    setUserAnswers((prev) => [
-      ...prev,
+    const updatedAnswers = [
+      ...userAnswers,
       {
         question_index: questions[currentQuestion].question_index,
         selected_answer_index: selectedAnswer,
       },
-    ]);
+    ];
+
+    setUserAnswers(updatedAnswers);
 
     if (!isLastQuestion) {
       setCurrentQuestion((prev) => prev + 1);
       setSelectedAnswer(null);
     } else {
-      submitQuiz();
+      submitQuiz(updatedAnswers);
     }
   };
 
@@ -105,18 +106,17 @@ function Quiz() {
       await api.post("/api/game/play-count", {
         game_id: gameId,
       });
-    } catch (err) {
-      console.error("Failed to update play count:", err);
+    } catch {
       toast.error("Failed to update play count.");
     }
   };
 
-  const submitQuiz = async () => {
+  const submitQuiz = async (finalAnswers?: typeof userAnswers) => {
     try {
       setLoading(true);
 
       const response = await api.post(`/api/game/game-type/quiz/${id}/check`, {
-        answers: userAnswers,
+        answers: finalAnswers ?? userAnswers,
       });
 
       setResult(response.data.data);
@@ -125,8 +125,7 @@ function Quiz() {
       await addPlayCount(id!);
 
       setFinished(true);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError("Failed to submit quiz.");
     } finally {
       setLoading(false);

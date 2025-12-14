@@ -1,27 +1,28 @@
-import { useState, useEffect } from "react";
 import api from "@/api/axios";
-import { useAuthStore } from "@/store/useAuthStore";
-import { User, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Typography } from "@/components/ui/typography";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import Navbar from "@/components/ui/layout/Navbar";
-import thumbnailPlaceholder from "../assets/images/thumbnail-placeholder.png";
-import iconSearch from "../assets/images/icon-search.svg";
-import iconHeart from "../assets/images/icon-heart.svg";
+import { Typography } from "@/components/ui/typography";
+import { useAuthStore } from "@/store/useAuthStore";
+import { ChevronDown, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import iconHeartSolid from "../assets/images/icon-heart-solid.svg";
+import iconHeart from "../assets/images/icon-heart.svg";
 import iconPlay from "../assets/images/icon-play.svg";
+import iconSearch from "../assets/images/icon-search.svg";
 import iconVector from "../assets/images/icon-vector.svg";
+import thumbnailPlaceholder from "../assets/images/thumbnail-placeholder.png";
 
 type GameTemplate = {
   id: string;
@@ -33,16 +34,32 @@ type GameTemplate = {
   is_life_based: boolean;
 };
 
+type GameApiResponse = {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail_image: string | null;
+  game_template_name: string;
+  game_template_slug: string;
+  total_liked: number;
+  total_played: number;
+  creator_id: string;
+  creator_name: string;
+  is_game_liked: boolean;
+};
+
 type Game = {
   id: string;
   name: string;
   description: string;
   thumbnail_image: string | null;
-  game_template: string;
+  game_template_name: string;
+  game_template_slug: string;
   total_liked: number;
   total_played: number;
   creator_id: string;
   creator_name: string;
+  is_game_liked: boolean;
   is_liked?: boolean;
 };
 
@@ -50,6 +67,7 @@ export default function HomePage() {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = !!(token && user);
+  const navigate = useNavigate();
 
   const [games, setGames] = useState<Game[]>([]);
   const [gameTemplates, setGameTemplates] = useState<GameTemplate[]>([]);
@@ -74,8 +92,8 @@ export default function HomePage() {
       try {
         const response = await api.get("/api/game/template");
         setGameTemplates(response.data.data);
-      } catch (err) {
-        console.error("Failed to fetch game templates:", err);
+      } catch {
+        // Silently fail template fetch
       }
     };
     fetchGameTemplates();
@@ -104,18 +122,26 @@ export default function HomePage() {
 
         setGames(
           response.data.data.map(
-            (g: Game) =>
+            (g: GameApiResponse) =>
               ({
-                ...g,
+                id: g.id,
+                name: g.name,
+                description: g.description,
+                thumbnail_image: g.thumbnail_image,
+                game_template_name: g.game_template_name || "",
+                game_template_slug: g.game_template_slug || "",
                 total_liked: g.total_liked || 0,
                 total_played: g.total_played || 0,
-                is_liked: g.is_liked || false,
+                creator_id: g.creator_id,
+                creator_name: g.creator_name,
+                is_game_liked: g.is_game_liked || false,
+                is_liked: g.is_game_liked || false,
               }) as Game,
           ),
         );
-      } catch (err) {
+      } catch {
         setError("Failed to fetch games. Please try again later.");
-        console.error("Fetch error:", err);
+        setGames([]);
       } finally {
         if (initialLoading) {
           setInitialLoading(false);
@@ -161,9 +187,7 @@ export default function HomePage() {
         game_id: gameId,
         is_like: newIsLiked,
       });
-    } catch (err) {
-      console.error("Failed to like game:", err);
-
+    } catch {
       setGames((prev) =>
         prev.map((game) => {
           if (game.id === gameId) {
@@ -185,12 +209,11 @@ export default function HomePage() {
     const isAirplaneGame = game.name.toLowerCase().includes("airplane");
 
     const handlePlayGame = () => {
-      // Redirect Logic
-      if (isAirplaneGame) {
-        window.location.href = `/game/play/airplane/${game.id}`;
-      } else {
-        window.location.href = `/quiz/play/${game.id}`;
+      if (!game.game_template_slug) {
+        console.error("Game template slug is missing for game:", game);
+        return;
       }
+      navigate(`/${game.game_template_slug}/play/${game.id}`);
     };
 
     // --- LOGIC GAMBAR YANG BENAR ---
@@ -233,7 +256,7 @@ export default function HomePage() {
               {game.name}
             </Typography>
             <Badge variant="secondary" className="shrink-0">
-              {isAirplaneGame ? "Airplane" : "Quiz"}
+              {game.game_template_name}
             </Badge>
           </div>
 
@@ -252,7 +275,7 @@ export default function HomePage() {
             <div className="flex gap-3">
               {isAuthenticated ? (
                 <div
-                  className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-1 cursor-pointer hover:scale-105 transition-transform ease-in-out duration-150"
                   onClick={(e) => handleLike(e, game.id)}
                 >
                   <img
