@@ -62,6 +62,10 @@ import SpeedSorting from "./pages/speed-sorting/SpeedSorting";
 import CreateSpeedSorting from "./pages/speed-sorting/CreateSpeedSorting";
 import EditSpeedSorting from "./pages/speed-sorting/EditSpeedSorting";
 
+import CreateCrossword from "./pages/crosswords/create";
+import PlayCrossword from "./pages/crosswords/index";
+import EditCrossword from "./pages/crosswords/edit";
+
 function App() {
   return (
     <>
@@ -84,6 +88,7 @@ function App() {
           path="/pair-or-no-pair/play/:gameId"
           element={<PairOrNoPairGame />}
         />
+        <Route path="/crossword/play/:id" element={<PlayCrossword />} />
         <Route path="/true-or-false/play/:id" element={<PlayTrueOrFalse />} />
         <Route path="/whack-a-mole/play/:gameId" element={<WhackAMoleGame />} />
         <Route
@@ -126,6 +131,8 @@ function App() {
             path="/speed-sorting/edit/:id"
             element={<EditSpeedSorting />}
           />
+          <Route path="/create-crossword" element={<CreateCrossword />} />
+          <Route path="/crossword/edit/:id" element={<EditCrossword />} />
 
           <Route path="/create-hangman" element={<CreateHangmanTemplate />} />
           <Route path="/hangman/edit/:id" element={<CreateHangmanTemplate />} />
